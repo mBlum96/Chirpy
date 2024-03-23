@@ -13,19 +13,21 @@ type apiConfig struct {
 func main() {
 	appRouter := chi.NewRouter()
 	apiRouter := chi.NewRouter()
+	adminRouter := chi.NewRouter()
 	apiCfg := &apiConfig{
 		fileserverHits: 0,
 	}
-	apiRouter.Mount("/api", appRouter)
+	appRouter.Mount("/api", apiRouter)
+	appRouter.Mount("/admin", adminRouter)
 	appsMiddleWare := middlewareCors(apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	appRouter.Handle("/app/*", middlewareCors(appsMiddleWare))
 	appRouter.Handle("/app", middlewareCors(appsMiddleWare))
-	appRouter.Get("/metrics", apiCfg.handleMetrics)
-	appRouter.Handle("/reset", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	adminRouter.Get("/metrics", apiCfg.handleMetrics)
+	apiRouter.Handle("/reset", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		apiCfg.fileserverHits = 0
 		w.WriteHeader(http.StatusOK)
 	}))
-	appRouter.Get("/healthz", handleHealthz)
+	apiRouter.Get("/healthz", handleHealthz)
 	corsMux := middlewareCors(appRouter)
 	server := &http.Server{
 		Addr:    ":8080",

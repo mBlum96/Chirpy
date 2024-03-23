@@ -16,7 +16,7 @@ func main() {
 	apiCfg := &apiConfig{
 		fileserverHits: 0,
 	}
-	apiRouter.Mount("/api")
+	apiRouter.Mount("/api", appRouter)
 	appsMiddleWare := middlewareCors(apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	appRouter.Handle("/app/*", middlewareCors(appsMiddleWare))
 	appRouter.Handle("/app", middlewareCors(appsMiddleWare))

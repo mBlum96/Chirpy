@@ -27,6 +27,7 @@ func main() {
 		apiCfg.fileserverHits = 0
 		w.WriteHeader(http.StatusOK)
 	}))
+	apiRouter.Post("/validate_chirp", http.HandlerFunc(apiCfg.handleValidation))
 	apiRouter.Get("/healthz", handleHealthz)
 	corsMux := middlewareCors(appRouter)
 	server := &http.Server{

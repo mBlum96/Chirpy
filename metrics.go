@@ -1,8 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
-	"strconv"
+	"os"
 )
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -13,7 +14,13 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 }
 
 func (cfg *apiConfig) handleMetrics(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	data, err := os.ReadFile("metrics.html")
+	if err != nil {
+		http.Error(w, "Error reading message format", http.StatusInternalServerError)
+		return
+	}
+	metricsMessage := fmt.Sprintf(string(data), cfg.fileserverHits)
+	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Hits: " + strconv.Itoa(cfg.fileserverHits)))
+	w.Write([]byte(metricsMessage))
 }

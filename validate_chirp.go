@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 )
 
 const MAX_CHIRP = 140
@@ -14,6 +15,18 @@ const (
 	ErrDecoding ErrType = iota
 	ErrTooLong
 )
+
+type Profanity string
+
+const (
+	kerfuffle Profanity = "kerfuffle"
+	sharbert  Profanity = "sharbert"
+	fornax    Profanity = "fornax"
+)
+
+const profanityReplacement string = "****"
+
+var profanities = []Profanity{kerfuffle, sharbert, fornax}
 
 const ErrDecodingHeader int = 500
 const ErrTooLongHeader int = 400
@@ -26,17 +39,18 @@ func (cfg *apiConfig) handleValidation(w http.ResponseWriter, r *http.Request) {
 	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		handleErr(w, r, ErrDecoding)
+		respondErr(w, ErrDecoding)
 		return
 	}
 	if len(params.Body) > MAX_CHIRP {
-		handleErr(w, r, ErrTooLong)
+		respondErr(w, ErrTooLong)
 		return
 	}
-	handleSuccess(w, r)
+	// params.Body = cleanBody(params.Body)
+	respondJSON(w, cleanBody(params.Body))
 }
 
-func handleErr(w http.ResponseWriter, r *http.Request, errNumber ErrType) {
+func respondErr(w http.ResponseWriter, errNumber ErrType) {
 	var errHeader int
 	type returnVals struct {
 		Error string `json:"error"`
@@ -62,15 +76,14 @@ func handleErr(w http.ResponseWriter, r *http.Request, errNumber ErrType) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(errHeader)
 	w.Write(dat)
-	return
 }
 
-func handleSuccess(w http.ResponseWriter, r *http.Request) {
+func respondJSON(w http.ResponseWriter, cleanedBody string) {
 	type returnVals struct {
-		Valid bool `json:"valid"`
+		Body string `json:"cleaned_body"`
 	}
 	respBody := returnVals{
-		Valid: true,
+		Body: cleanedBody,
 	}
 	dat, err := json.Marshal(respBody)
 	if err != nil {
@@ -81,5 +94,17 @@ func handleSuccess(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	w.Write(dat)
-	return
+}
+
+func cleanBody(body string) (cleanBody string) {
+	words := strings.Fields(body)
+	for i, word := range words {
+		for _, profanity := range profanities {
+			if strings.Contains(strings.ToLower(word), string(profanity)) {
+				words[i] = profanityReplacement
+				break
+			}
+		}
+	}
+	return strings.Join(words, " ")
 }

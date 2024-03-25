@@ -9,6 +9,10 @@ import (
 
 const MAX_CHIRP = 140
 
+type Chirp struct {
+	Id   int
+	Body string
+}
 type ErrType int
 
 const (
@@ -31,7 +35,7 @@ var profanities = []Profanity{kerfuffle, sharbert, fornax}
 const ErrDecodingHeader int = 500
 const ErrTooLongHeader int = 400
 
-func (cfg *apiConfig) handleValidation(w http.ResponseWriter, r *http.Request) {
+func (db *DB) handleValidation(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Body string `json:"body"`
 	}
@@ -47,7 +51,8 @@ func (cfg *apiConfig) handleValidation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// params.Body = cleanBody(params.Body)
-	respondJSON(w, cleanBody(params.Body))
+	// respondJSON(w, cleanBody(params.Body))
+	db.CreateChirp(cleanBody(params.Body))
 }
 
 func respondErr(w http.ResponseWriter, errNumber ErrType) {
@@ -92,7 +97,7 @@ func respondJSON(w http.ResponseWriter, cleanedBody string) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
+	w.WriteHeader(201)
 	w.Write(dat)
 }
 
